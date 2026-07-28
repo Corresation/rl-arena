@@ -1,8 +1,8 @@
 # rl-arena
 
-`rl-arena` is meant to serve as a conversion framework from [GigaLearnCPP](https://github.com/ZealanL/GigaLearnCPP-Leak), and is merely an experiment.
+`rl-arena` is meant to serve as a framework inspired by [GigaLearnCPP](https://github.com/ZealanL/GigaLearnCPP-Leak) (which you should definitely check out by the way!)
 
-Rust has a less rich ecosystem for this kind of thing, but for practical framework code it can become much easier to keep things compact.
+Came to the conclusion that Rust has a less rich ecosystem for this kind of thing, and why not just give it a shot?
 
 This project is inspired by:
 
@@ -11,4 +11,4 @@ This project is inspired by:
 * [RLGym-PPO](https://github.com/AechPro/rlgym-ppo)
 * [GigaLearnCPP](https://github.com/ZealanL/GigaLearnCPP-Leak)
 
-This is still early and may change a lot.
+This is still early and will be in active development.
