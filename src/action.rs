@@ -93,8 +93,7 @@ impl LookupTableAction {
                                 continue;
                             }
 
-                            let handbrake =
-                                jump && (pitch != 0.0 || yaw != 0.0 || roll != 0.0);
+                            let handbrake = jump && (pitch != 0.0 || yaw != 0.0 || roll != 0.0);
 
                             actions.push(CarControls {
                                 throttle: if boost { 1.0 } else { 0.0 },

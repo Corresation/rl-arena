@@ -1,6 +1,10 @@
+pub mod state;
+
+pub use state::GameState;
+
 use crate::action::{ActionParser, LookupTableAction};
 use rocketsim_rs::cxx::UniquePtr;
-use rocketsim_rs::sim::{Arena, CarConfig, CarState, Team};
+use rocketsim_rs::sim::{Arena, CarConfig, Team};
 
 pub struct Env {
     arena: UniquePtr<Arena>,
@@ -25,14 +29,22 @@ impl Env {
         env
     }
 
-    pub fn reset(&mut self) -> CarState {
+    fn state(&mut self) -> GameState {
+        GameState {
+            tick_count: self.arena.get_tick_count(),
+            ball: self.arena.pin_mut().get_ball(),
+            car: self.arena.pin_mut().get_car(self.car_id),
+        }
+    }
+
+    pub fn reset(&mut self) -> GameState {
         self.arena.pin_mut().reset_tick_count();
         self.arena.pin_mut().reset_to_random_kickoff(None);
 
-        self.arena.pin_mut().get_car(self.car_id)
+        self.state()
     }
 
-    pub fn step(&mut self, action_index: usize) -> CarState {
+    pub fn step(&mut self, action_index: usize) -> GameState {
         let controls = self.action_parser.parse_action(action_index);
 
         self.arena
@@ -42,7 +54,7 @@ impl Env {
 
         self.arena.pin_mut().step(self.tick_skip);
 
-        self.arena.pin_mut().get_car(self.car_id)
+        self.state()
     }
 }
 
@@ -57,21 +69,43 @@ mod tests {
     use super::*;
 
     #[test]
-    fn step_and_reset() {
+    fn reset_returns_zero_tick_count() {
+        rocketsim_rs::init(None, true);
+
+        let mut env = Env::new();
+        let state = env.reset();
+
+        assert_eq!(state.tick_count, 0);
+    }
+
+    #[test]
+    fn step_uses_tick_skip() {
+        rocketsim_rs::init(None, true);
+
+        let mut env = Env::new();
+
+        for tick_skip in [1, 4, 8, 12, 16] {
+            env.tick_skip = tick_skip;
+            env.reset();
+
+            let state = env.step(16);
+
+            assert_eq!(state.tick_count, u64::from(tick_skip));
+        }
+    }
+
+    #[test]
+    fn action_moves_car() {
         rocketsim_rs::init(None, true);
 
         let mut env = Env::new();
         let before = env.reset();
-        let before_speed = before.vel.x * before.vel.x + before.vel.y * before.vel.y;
+        let before_speed =
+            before.car.vel.x * before.car.vel.x + before.car.vel.y * before.car.vel.y;
 
         let after = env.step(16);
-        let after_speed = after.vel.x * after.vel.x + after.vel.y * after.vel.y;
+        let after_speed = after.car.vel.x * after.car.vel.x + after.car.vel.y * after.car.vel.y;
 
         assert!(after_speed > before_speed);
-        assert_eq!(env.arena.get_tick_count(), u64::from(env.tick_skip));
-
-        env.reset();
-
-        assert_eq!(env.arena.get_tick_count(), 0);
     }
 }
