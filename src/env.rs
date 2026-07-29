@@ -1,10 +1,12 @@
+use crate::action::{ActionParser, LookupTableAction};
 use rocketsim_rs::cxx::UniquePtr;
-use rocketsim_rs::sim::{Arena, CarConfig, CarControls, CarState, Team};
+use rocketsim_rs::sim::{Arena, CarConfig, CarState, Team};
 
 pub struct Env {
     arena: UniquePtr<Arena>,
     car_id: u32,
     tick_skip: u32,
+    action_parser: LookupTableAction,
 }
 
 impl Env {
@@ -16,6 +18,7 @@ impl Env {
             arena,
             car_id,
             tick_skip: 8,
+            action_parser: LookupTableAction::new(),
         };
 
         env.reset();
@@ -29,7 +32,9 @@ impl Env {
         self.arena.pin_mut().get_car(self.car_id)
     }
 
-    pub fn step(&mut self, controls: CarControls) -> CarState {
+    pub fn step(&mut self, action_index: usize) -> CarState {
+        let controls = self.action_parser.parse_action(action_index);
+
         self.arena
             .pin_mut()
             .set_car_controls(self.car_id, controls)
@@ -59,10 +64,7 @@ mod tests {
         let before = env.reset();
         let before_speed = before.vel.x * before.vel.x + before.vel.y * before.vel.y;
 
-        let after = env.step(CarControls {
-            throttle: 1.0,
-            ..Default::default()
-        });
+        let after = env.step(16);
         let after_speed = after.vel.x * after.vel.x + after.vel.y * after.vel.y;
 
         assert!(after_speed > before_speed);
