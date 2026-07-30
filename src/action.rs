@@ -128,6 +128,7 @@ impl LookupTableAction {
         }
 
         if !has_boost {
+            // fixed zero-boost jump actions being re-enabled
             for (allowed, boost) in result.iter_mut().zip(&self.boost_mask) {
                 if *boost != 0 {
                     *allowed = 0;
@@ -147,6 +148,12 @@ impl Default for LookupTableAction {
 
 impl ActionParser for LookupTableAction {
     fn parse_action(&self, index: usize) -> CarControls {
+        assert!(
+            index < self.actions.len(),
+            "action index {index} out of range ({} actions)",
+            self.actions.len()
+        );
+
         self.actions[index]
     }
 
@@ -224,5 +231,11 @@ mod tests {
         assert_eq!(parser.air_mask.len(), count);
         assert_eq!(parser.jump_mask.len(), count);
         assert_eq!(parser.boost_mask.len(), count);
+    }
+
+    #[test]
+    #[should_panic(expected = "action index 90")]
+    fn invalid_action_index_has_clear_message() {
+        LookupTableAction::new().parse_action(90);
     }
 }

@@ -1,3 +1,4 @@
+pub mod consts;
 pub mod state;
 
 pub use state::GameState;
@@ -42,6 +43,16 @@ impl Env {
         self.arena.pin_mut().reset_to_random_kickoff(None);
 
         self.state()
+    }
+
+    pub fn action_count(&self) -> usize {
+        self.action_parser.action_count()
+    }
+
+    pub fn action_mask(&mut self) -> Vec<u8> {
+        let car = self.arena.pin_mut().get_car(self.car_id);
+
+        self.action_parser.action_mask(&car)
     }
 
     pub fn step(&mut self, action_index: usize) -> GameState {
@@ -107,5 +118,16 @@ mod tests {
         let after_speed = after.car.vel.x * after.car.vel.x + after.car.vel.y * after.car.vel.y;
 
         assert!(after_speed > before_speed);
+    }
+
+    #[test]
+    fn exposes_action_space() {
+        rocketsim_rs::init(None, true);
+
+        let mut env = Env::new();
+        let mask = env.action_mask();
+
+        assert_eq!(env.action_count(), 90);
+        assert_eq!(mask.len(), env.action_count());
     }
 }
