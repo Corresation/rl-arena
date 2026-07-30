@@ -5,4 +5,4 @@ edition = "2024"
 license = "Apache-2.0"
 
 [dependencies]
-rocketsim_rs = { version = "0.37.0", default-features = false }
+rocketsim_rs = { version = "0.37.0", default-features = false, features = ["glam"] }

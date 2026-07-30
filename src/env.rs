@@ -1,4 +1,5 @@
 pub mod consts;
+pub mod math;
 pub mod state;
 
 pub use state::GameState;
