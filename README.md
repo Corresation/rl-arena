@@ -1,14 +1,13 @@
 # rl-arena
 
-`rl-arena` is meant to serve as a framework inspired by [GigaLearnCPP](https://github.com/ZealanL/GigaLearnCPP-Leak) (which you should definitely check out by the way!)
+`rl-arena` is a Rocket League reinforcement learning framework inspired by [GigaLearnCPP](https://github.com/ZealanL/GigaLearnCPP-Leak) and [rlgymppo_rs](https://github.com/VirxEC/rlgymppo_rs).
 
-Came to the conclusion that Rust has a less rich ecosystem for this kind of thing, and why not just give it a shot?
-
-This project is inspired by:
+Other inspirations/references for this project are listed below:
 
 * [rocket-learn](https://github.com/Rolv-Arild/rocket-learn)
 * [RLGym](https://rlgym.org/)
 * [RLGym-PPO](https://github.com/AechPro/rlgym-ppo)
-* [GigaLearnCPP](https://github.com/ZealanL/GigaLearnCPP-Leak)
+* [rlgym-learn-algos](https://github.com/JPK314/rlgym-learn-algos)
+* [rocketsim_rs](https://github.com/VirxEC/rocketsim-rs)
 
-This is still early and will be in active development.
+Development will remain active throughout the summer.
