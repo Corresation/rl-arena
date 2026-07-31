@@ -204,6 +204,20 @@ mod tests {
     }
 
     #[test]
+    fn action_16_is_straight_forward_throttle() {
+        let action = LookupTableAction::new().parse_action(16);
+
+        assert_eq!(action.throttle, 1.0);
+        assert_eq!(action.steer, 0.0);
+        assert_eq!(action.pitch, 0.0);
+        assert_eq!(action.yaw, 0.0);
+        assert_eq!(action.roll, 0.0);
+        assert!(!action.jump);
+        assert!(!action.boost);
+        assert!(!action.handbrake);
+    }
+
+    #[test]
     fn first_aerial_action_is_available_in_air() {
         let parser = LookupTableAction::new();
 
@@ -218,6 +232,37 @@ mod tests {
         for (allowed, action) in mask.iter().zip(&parser.actions) {
             if action.boost {
                 assert_eq!(*allowed, 0);
+            }
+        }
+    }
+
+    #[test]
+    fn action_mask_uses_rocketsim_car_state() {
+        let parser = LookupTableAction::new();
+        let mut car = CarState {
+            is_on_ground: false,
+            has_flipped: true,
+            has_double_jumped: true,
+            boost: 0.0,
+            ..Default::default()
+        };
+
+        let mask = parser.action_mask(&car);
+        for (allowed, action) in mask.iter().zip(&parser.actions) {
+            if action.jump || action.boost {
+                assert_eq!(*allowed, 0);
+            }
+        }
+
+        car.world_contact.has_contact = true;
+        car.world_contact.contact_normal.z = 1.0;
+
+        let mask = parser.action_mask(&car);
+        for (allowed, action) in mask.iter().zip(&parser.actions) {
+            if action.boost {
+                assert_eq!(*allowed, 0);
+            } else if action.jump {
+                assert_eq!(*allowed, 1);
             }
         }
     }

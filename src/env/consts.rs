@@ -123,8 +123,8 @@ pub mod time {
 
 #[cfg(test)]
 mod tests {
-    use super::{ball, boost, goal};
-    use rocketsim_rs::{consts::boostpads, math::Vec3};
+    use super::{ball, boost, goal, time};
+    use rocketsim_rs::{consts::boostpads, math::Vec3, sim::Arena};
 
     const BIG_PAD_INDICES: [usize; 6] = [3, 4, 15, 18, 29, 30];
 
@@ -198,5 +198,16 @@ mod tests {
             goal::SCORE_BASE_THRESHOLD_Y + ball::RADIUS
         );
         assert_eq!(goal::THRESHOLD_Y, 5215.5);
+    }
+
+    #[test]
+    fn standard_arena_uses_tick_rate_constant() {
+        rocketsim_rs::init(None, true);
+
+        let arena = Arena::default_standard();
+        let tick_rate = arena.get_tick_rate();
+
+        assert!((tick_rate - time::TICK_RATE).abs() < 0.001);
+        assert!((time::TICK_TIME - 1.0 / tick_rate).abs() < f32::EPSILON);
     }
 }
