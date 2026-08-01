@@ -1,2 +1,2 @@
 * text=auto eol=lf
-*.cmf binary
+src/maps/*.bin binary

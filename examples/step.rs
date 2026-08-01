@@ -1,7 +1,7 @@
 use rl_arena::env::Env;
 
 fn main() {
-    rocketsim_rs::init(None, true);
+    rl_arena::init();
 
     let mut env = Env::new();
 

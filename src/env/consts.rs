@@ -202,7 +202,7 @@ mod tests {
 
     #[test]
     fn standard_arena_uses_tick_rate_constant() {
-        rocketsim_rs::init(None, true);
+        crate::init();
 
         let arena = Arena::default_standard();
         let tick_rate = arena.get_tick_rate();

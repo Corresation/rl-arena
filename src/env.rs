@@ -98,7 +98,7 @@ mod tests {
 
     #[test]
     fn reset_returns_zero_tick_count() {
-        rocketsim_rs::init(None, true);
+        crate::init();
 
         let mut env = Env::new();
         let state = env.reset();
@@ -110,7 +110,7 @@ mod tests {
     fn reset_restores_boost_pads() {
         use rocketsim_rs::sim::BoostPadState;
 
-        rocketsim_rs::init(None, true);
+        crate::init();
 
         let mut env = Env::new();
         env.arena.pin_mut().set_pad_state(
@@ -130,7 +130,7 @@ mod tests {
 
     #[test]
     fn step_uses_tick_skip() {
-        rocketsim_rs::init(None, true);
+        crate::init();
 
         let mut env = Env::new();
 
@@ -146,7 +146,7 @@ mod tests {
 
     #[test]
     fn action_moves_car() {
-        rocketsim_rs::init(None, true);
+        crate::init();
 
         let mut env = Env::new();
         let player_id = env.player_id();
@@ -169,7 +169,7 @@ mod tests {
 
     #[test]
     fn exposes_action_space() {
-        rocketsim_rs::init(None, true);
+        crate::init();
 
         let mut env = Env::new();
         let mask = env.action_mask();
@@ -180,7 +180,7 @@ mod tests {
 
     #[test]
     fn state_contains_all_players_and_boost_pads() {
-        rocketsim_rs::init(None, true);
+        crate::init();
 
         let mut env = Env::new();
         let orange_id = env
@@ -207,7 +207,7 @@ mod tests {
 
     #[test]
     fn players_are_sorted_by_id() {
-        rocketsim_rs::init(None, true);
+        crate::init();
 
         let mut env = Env::new();
         let orange_id = env
@@ -230,7 +230,7 @@ mod tests {
     fn inverted_boost_pads_keep_states_paired() {
         use rocketsim_rs::sim::BoostPadState;
 
-        rocketsim_rs::init(None, true);
+        crate::init();
 
         let mut env = Env::new();
 
@@ -262,7 +262,7 @@ mod tests {
 
     #[test]
     fn deterministic_soak_stays_valid() {
-        rocketsim_rs::init(None, true);
+        crate::init();
 
         let (first, first_player_id) = run_soak(7);
         let (second, second_player_id) = run_soak(7);

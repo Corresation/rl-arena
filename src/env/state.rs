@@ -183,7 +183,7 @@ mod tests {
 
     #[test]
     fn boost_pad_indices_match_real_arena_order() {
-        rocketsim_rs::init(None, true);
+        crate::init();
 
         let arena = Arena::default_standard();
         let pad_indices = boost_pad_indices(&arena);
