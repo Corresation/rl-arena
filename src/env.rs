@@ -18,6 +18,8 @@ pub struct Env {
 
 impl Env {
     pub fn new() -> Self {
+        crate::init();
+
         let mut arena = Arena::default_standard();
         let car_id = arena.pin_mut().add_car(Team::Blue, CarConfig::octane());
         let boost_pad_indices = state::boost_pad_indices(&arena);
@@ -98,8 +100,6 @@ mod tests {
 
     #[test]
     fn reset_returns_zero_tick_count() {
-        crate::init();
-
         let mut env = Env::new();
         let state = env.reset();
 
@@ -109,8 +109,6 @@ mod tests {
     #[test]
     fn reset_restores_boost_pads() {
         use rocketsim_rs::sim::BoostPadState;
-
-        crate::init();
 
         let mut env = Env::new();
         env.arena.pin_mut().set_pad_state(
@@ -130,8 +128,6 @@ mod tests {
 
     #[test]
     fn step_uses_tick_skip() {
-        crate::init();
-
         let mut env = Env::new();
 
         for tick_skip in [1, 4, 8, 12, 16] {
@@ -146,8 +142,6 @@ mod tests {
 
     #[test]
     fn action_moves_car() {
-        crate::init();
-
         let mut env = Env::new();
         let player_id = env.player_id();
         let before = env.reset();
@@ -169,8 +163,6 @@ mod tests {
 
     #[test]
     fn exposes_action_space() {
-        crate::init();
-
         let mut env = Env::new();
         let mask = env.action_mask();
 
@@ -180,8 +172,6 @@ mod tests {
 
     #[test]
     fn state_contains_all_players_and_boost_pads() {
-        crate::init();
-
         let mut env = Env::new();
         let orange_id = env
             .arena
@@ -207,8 +197,6 @@ mod tests {
 
     #[test]
     fn players_are_sorted_by_id() {
-        crate::init();
-
         let mut env = Env::new();
         let orange_id = env
             .arena
@@ -229,8 +217,6 @@ mod tests {
     #[test]
     fn inverted_boost_pads_keep_states_paired() {
         use rocketsim_rs::sim::BoostPadState;
-
-        crate::init();
 
         let mut env = Env::new();
 
@@ -262,8 +248,6 @@ mod tests {
 
     #[test]
     fn deterministic_soak_stays_valid() {
-        crate::init();
-
         let (first, first_player_id) = run_soak(7);
         let (second, second_player_id) = run_soak(7);
 

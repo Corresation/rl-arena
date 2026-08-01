@@ -15,6 +15,7 @@ pub fn normalized(vector: Vec3A) -> Vec3A {
         Vec3A::ZERO
     }
 }
+
 #[inline]
 #[must_use]
 pub fn to_local(rotation: Mat3A, vector: Vec3A) -> Vec3A {

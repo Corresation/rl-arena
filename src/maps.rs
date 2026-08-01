@@ -1,5 +1,6 @@
 use std::sync::Once;
 
+// packed from Snayck's C++ byte arrays; source CMFs are reproducible via RLArenaCollisionDumper
 const SOCCAR_DATA: &[u8] = include_bytes!("maps/soccar.bin");
 const SOCCAR_MESH_SPANS: [(usize, usize); 16] = [
     (0, 16_364),

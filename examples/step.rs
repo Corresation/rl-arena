@@ -1,8 +1,6 @@
 use rl_arena::env::Env;
 
 fn main() {
-    rl_arena::init();
-
     let mut env = Env::new();
 
     let state = env.step(16);
