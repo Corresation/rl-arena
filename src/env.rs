@@ -5,6 +5,7 @@ pub mod state;
 pub use state::{GameState, Physics};
 
 use crate::action::{ActionParser, LookupTableAction};
+use crate::obs::{AdvancedObs, ObsBuilder};
 use rocketsim_rs::cxx::UniquePtr;
 use rocketsim_rs::sim::{Arena, CarConfig, Team};
 
@@ -13,6 +14,7 @@ pub struct Env {
     car_id: u32,
     tick_skip: u32,
     action_parser: LookupTableAction,
+    obs_builder: AdvancedObs,
     boost_pad_indices: [usize; consts::boost::NUM_PADS],
 }
 
@@ -29,6 +31,7 @@ impl Env {
             car_id,
             tick_skip: 8,
             action_parser: LookupTableAction::new(),
+            obs_builder: AdvancedObs::new(),
             boost_pad_indices,
         };
 
@@ -40,15 +43,24 @@ impl Env {
         GameState::from_arena(self.arena.pin_mut(), &self.boost_pad_indices)
     }
 
-    pub fn reset(&mut self) -> GameState {
+    pub fn reset(&mut self) -> (GameState, Vec<Vec<f32>>) {
         self.arena.pin_mut().reset_tick_count();
         self.arena.pin_mut().reset_to_random_kickoff(None);
 
-        self.state()
+        let state = self.state();
+        let agents = [self.car_id];
+        self.obs_builder.reset(&agents, &state);
+        let obs = self.obs_builder.build_obs(&agents, &state);
+
+        (state, obs)
     }
 
     pub fn action_count(&self) -> usize {
         self.action_parser.action_count()
+    }
+
+    pub fn obs_size(&self) -> usize {
+        self.obs_builder.obs_size(self.arena.num_cars())
     }
 
     pub const fn player_id(&self) -> u32 {
@@ -61,7 +73,7 @@ impl Env {
         self.action_parser.action_mask(&car)
     }
 
-    pub fn step(&mut self, action_index: usize) -> GameState {
+    pub fn step(&mut self, action_index: usize) -> (GameState, Vec<Vec<f32>>) {
         let controls = self.action_parser.parse_action(action_index);
 
         self.arena
@@ -71,7 +83,10 @@ impl Env {
 
         self.arena.pin_mut().step(self.tick_skip);
 
-        self.state()
+        let state = self.state();
+        let obs = self.obs_builder.build_obs(&[self.car_id], &state);
+
+        (state, obs)
     }
 }
 
@@ -101,7 +116,7 @@ mod tests {
     #[test]
     fn reset_returns_zero_tick_count() {
         let mut env = Env::new();
-        let state = env.reset();
+        let (state, _) = env.reset();
 
         assert_eq!(state.tick_count, 0);
     }
@@ -120,7 +135,7 @@ mod tests {
             },
         );
 
-        let state = env.reset();
+        let (state, _) = env.reset();
 
         assert!(state.boost_pads.iter().all(|pad| pad.is_active));
         assert!(state.boost_pads.iter().all(|pad| pad.cooldown == 0.0));
@@ -134,7 +149,7 @@ mod tests {
             env.tick_skip = tick_skip;
             env.reset();
 
-            let state = env.step(16);
+            let (state, _) = env.step(16);
 
             assert_eq!(state.tick_count, u64::from(tick_skip));
         }
@@ -144,14 +159,14 @@ mod tests {
     fn action_moves_car() {
         let mut env = Env::new();
         let player_id = env.player_id();
-        let before = env.reset();
+        let (before, _) = env.reset();
         let before = &before
             .player(player_id)
             .expect("controlled player should exist")
             .state;
         let before_speed = before.vel.x * before.vel.x + before.vel.y * before.vel.y;
 
-        let after = env.step(16);
+        let (after, _) = env.step(16);
         let after = &after
             .player(player_id)
             .expect("controlled player should exist")
@@ -159,6 +174,28 @@ mod tests {
         let after_speed = after.vel.x * after.vel.x + after.vel.y * after.vel.y;
 
         assert!(after_speed > before_speed);
+    }
+
+    #[test]
+    fn reset_and_step_build_observations() {
+        let mut env = Env::new();
+        let _ = env
+            .arena
+            .pin_mut()
+            .add_car(Team::Orange, CarConfig::octane());
+
+        let (_, initial_obs) = env.reset();
+
+        assert_eq!(initial_obs.len(), 1);
+        assert_eq!(initial_obs[0].len(), 109);
+        assert_eq!(env.obs_size(), 109);
+        assert_eq!(&initial_obs[0][9..17], &[0.0; 8]);
+
+        let (_, obs) = env.step(16);
+
+        assert_eq!(obs.len(), 1);
+        assert_eq!(obs[0].len(), env.obs_size());
+        assert_eq!(&obs[0][9..17], &[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
     }
 
     #[test]
