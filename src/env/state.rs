@@ -4,10 +4,10 @@ use super::{
 };
 use rocketsim_rs::{
     glam_ext::{
-        BallA, CarInfoA, CarStateA,
+        BallA, CarConfigA, CarInfoA, CarStateA,
         glam::{Mat3A, Vec3A},
     },
-    sim::{Arena, BoostPadState},
+    sim::{Arena, BoostPadState, Team},
 };
 use std::pin::Pin;
 
@@ -50,12 +50,50 @@ impl Physics {
     }
 }
 
+#[derive(Clone, Copy, Debug, Default)]
+pub struct PlayerEvents {
+    pub goal: bool,
+    pub assist: bool,
+    pub shot: bool,
+    pub shot_pass: bool,
+    pub save: bool,
+    pub bump: bool,
+    pub bumped: bool,
+    pub demo: bool,
+    pub demoed: bool,
+}
+
+#[derive(Clone, Debug)]
+pub struct Player {
+    pub id: u32,
+    pub team: Team,
+    pub state: CarStateA,
+    pub config: CarConfigA,
+    pub ball_touched: bool,
+    pub events: PlayerEvents,
+}
+
+impl From<CarInfoA> for Player {
+    fn from(player: CarInfoA) -> Self {
+        Self {
+            id: player.id,
+            team: player.team,
+            state: player.state,
+            config: player.config,
+            ball_touched: false,
+            events: PlayerEvents::default(),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct GameState {
     pub tick_count: u64,
+    pub goal_scored: bool,
     pub ball: BallA,
-    pub players: Vec<CarInfoA>,
+    pub players: Vec<Player>,
     pub boost_pads: [BoostPadState; boost::NUM_PADS],
+    pub previous: Option<Box<GameState>>,
 }
 
 impl GameState {
@@ -64,12 +102,14 @@ impl GameState {
         pad_indices: &[usize; boost::NUM_PADS],
     ) -> Self {
         let tick_count = arena.get_tick_count();
+        let goal_scored = arena.is_ball_scored();
         let ball = arena.as_mut().get_ball().to_glam();
         let mut players: Vec<_> = arena
             .as_mut()
             .get_car_infos()
             .into_iter()
             .map(CarInfoA::from)
+            .map(Player::from)
             .collect();
         // RocketSim stores cars unordered
         players.sort_unstable_by_key(|player| player.id);
@@ -77,14 +117,25 @@ impl GameState {
 
         Self {
             tick_count,
+            goal_scored,
             ball,
             players,
             boost_pads,
+            previous: None,
         }
     }
 
+    pub(crate) fn set_previous(&mut self, previous: GameState) {
+        for player in &mut self.players {
+            let hit = player.state.ball_hit_info;
+            player.ball_touched = hit.is_valid && hit.tick_count_when_hit >= previous.tick_count;
+        }
+
+        self.previous = Some(Box::new(previous));
+    }
+
     #[must_use]
-    pub fn player(&self, id: u32) -> Option<&CarInfoA> {
+    pub fn player(&self, id: u32) -> Option<&Player> {
         self.players.iter().find(|player| player.id == id)
     }
 
@@ -182,6 +233,33 @@ mod tests {
     }
 
     #[test]
+    fn per_step_touch_uses_previous_tick_boundary() {
+        for (valid, hit_tick, expected) in
+            [(true, 100, true), (true, 99, false), (false, 100, false)]
+        {
+            let player = Player::from(CarInfoA {
+                id: 1,
+                ..Default::default()
+            });
+            let previous = GameState {
+                tick_count: 100,
+                goal_scored: false,
+                ball: BallA::default(),
+                players: vec![player],
+                boost_pads: [BoostPadState::default(); boost::NUM_PADS],
+                previous: None,
+            };
+            let mut current = previous.clone();
+            current.tick_count = 108;
+            current.players[0].state.ball_hit_info.is_valid = valid;
+            current.players[0].state.ball_hit_info.tick_count_when_hit = hit_tick;
+            current.set_previous(previous);
+
+            assert_eq!(current.players[0].ball_touched, expected);
+        }
+    }
+
+    #[test]
     fn boost_pad_indices_match_real_arena_order() {
         crate::init();
 
@@ -209,5 +287,21 @@ mod tests {
                 .enumerate()
                 .any(|(canonical_index, &arena_index)| canonical_index != arena_index)
         );
+    }
+
+    #[test]
+    fn goal_state_uses_rocketsim() {
+        crate::init();
+
+        let mut arena = Arena::default_standard();
+        let pad_indices = boost_pad_indices(&arena);
+        let mut ball = arena.pin_mut().get_ball();
+        ball.pos.y = crate::env::consts::goal::THRESHOLD_Y + 1.0;
+        arena.pin_mut().set_ball(ball);
+
+        let state = GameState::from_arena(arena.pin_mut(), &pad_indices);
+
+        assert!(state.goal_scored);
+        assert_eq!(state.goal_scored, arena.is_ball_scored());
     }
 }

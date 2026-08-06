@@ -13,12 +13,15 @@ pub mod field {
 
 pub mod goal {
     use super::ball;
+    use rocketsim_rs::glam_ext::glam::Vec3A;
 
     pub use rocketsim_rs::consts::SOCCAR_GOAL_SCORE_BASE_THRESHOLD_Y as SCORE_BASE_THRESHOLD_Y;
 
     pub const HEIGHT: f32 = 642.775;
     pub const CENTER_TO_POST: f32 = 892.755;
     pub const THRESHOLD_Y: f32 = SCORE_BASE_THRESHOLD_Y + ball::RADIUS;
+    pub const ORANGE_BACK: Vec3A = Vec3A::new(0.0, super::field::BACK_NET_Y, HEIGHT / 2.0);
+    pub const BLUE_BACK: Vec3A = Vec3A::new(0.0, -super::field::BACK_NET_Y, HEIGHT / 2.0);
 }
 
 pub mod ball {

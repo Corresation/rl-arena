@@ -1,10 +1,10 @@
 use crate::env::{
     consts::boost,
     math::to_local,
-    state::{GameState, Physics},
+    state::{GameState, Physics, Player},
 };
 use rocketsim_rs::{
-    glam_ext::{CarInfoA, glam::Vec3A},
+    glam_ext::glam::Vec3A,
     sim::{BoostPadState, CarControls, CarState, Team},
 };
 
@@ -65,7 +65,7 @@ impl AdvancedObs {
     }
 
     fn player_obs(
-        player: &CarInfoA,
+        player: &Player,
         ball: Physics,
         inverted: bool,
         has_flip_or_jump: bool,
@@ -139,7 +139,7 @@ impl ObsBuilder for AdvancedObs {
             .map(|(player, &has_flip)| Self::player_obs(player, inverted_ball, true, has_flip))
             .collect();
         let boost_pads: Vec<_> = state.boost_pads.iter().map(Self::pad_value).collect();
-        // keep timers paired; ggl swaps its inverted timer array
+        // keep timers paired; ggl swaps inverted timer array
         let inverted_boost_pads: Vec<_> =
             state.inverted_boost_pads().map(Self::pad_value).collect();
 
@@ -198,7 +198,7 @@ impl ObsBuilder for AdvancedObs {
 mod tests {
     use super::*;
     use rocketsim_rs::glam_ext::{
-        BallA, CarStateA,
+        BallA, CarInfoA, CarStateA,
         glam::{Mat3A, Vec3A},
     };
 
@@ -275,9 +275,11 @@ mod tests {
 
         GameState {
             tick_count: 0,
+            goal_scored: false,
             ball,
-            players: vec![blue, orange],
+            players: vec![Player::from(blue), Player::from(orange)],
             boost_pads,
+            previous: None,
         }
     }
 
@@ -327,14 +329,16 @@ mod tests {
             (3, Team::Blue),
             (4, Team::Orange),
         ]
-        .map(|(id, team)| CarInfoA {
-            id,
-            team,
-            state: CarStateA {
-                pos: Vec3A::new(id as f32 * 5000.0, 0.0, 0.0),
+        .map(|(id, team)| {
+            Player::from(CarInfoA {
+                id,
+                team,
+                state: CarStateA {
+                    pos: Vec3A::new(id as f32 * 5000.0, 0.0, 0.0),
+                    ..Default::default()
+                },
                 ..Default::default()
-            },
-            ..Default::default()
+            })
         })
         .into();
 
